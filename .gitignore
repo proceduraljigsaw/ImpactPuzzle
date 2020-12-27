@@ -1,0 +1,13 @@
+__pycache__/
+output/*
+*.py[cod]
+*.svg
+*.imp
+*.pro
+*.set
+*.tab
+*.json
+.vscode/*
+.venv/*
+.unotes/*
+*.log
