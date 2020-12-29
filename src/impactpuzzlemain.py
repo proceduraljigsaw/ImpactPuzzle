@@ -136,7 +136,8 @@ class ShardGui():
                      ButtonDesc("Delete Tab", self.deltab, 0),
                      ButtonDesc("Flip tab", self.fliptab, 1),
                      ButtonDesc("Make jagged tab", self.makejagged, 0,colspan=2),
-                     ButtonDesc("Make fracture tab", self.makefracture, 0,colspan=2)]
+                     ButtonDesc("Make fracture tab", self.makefracture, 0,colspan=2),
+                     ButtonDesc("Regenerate all tabs", self.regentabs, 0,colspan=2)]
 
         loadsave_btns = [ButtonDesc("Load projectile", self.loadprojectile, 0),
                          ButtonDesc("Load Impact", self.loadimpact, 1),
@@ -144,17 +145,17 @@ class ShardGui():
                          ButtonDesc("Export SVG", self.exportsvg, 1),
                          ButtonDesc("Projectile Editor", self.openprojectile, 0, colspan=2),
                          ButtonDesc("Tab Creator", self.opentabeditor, 0, colspan=2),
-                         ButtonDesc("Load tab library", self.loadtablibrary, 0, colspan=2)]
-
-        settings_btns = [ButtonDesc("Load settings", self.loadsettings, 0),
+                         ButtonDesc("Load tab library", self.loadtablibrary, 0, colspan=2),
+                         ButtonDesc("Load settings", self.loadsettings, 0),
                          ButtonDesc("Save settings", self.savesettings, 1)]
+
 
         # Left side area
 
         l = tk.LabelFrame(self.aframe, text="Frame settings")
         l.grid(sticky='WE', padx=5, pady=5, column=0, columnspan=2)
-        l.grid_columnconfigure(0,minsize=150)
-        l.grid_columnconfigure(1,minsize=150)
+        l.grid_columnconfigure(0,minsize=200)
+        l.grid_columnconfigure(1,minsize=200)
         cur_row = 0
         la = tk.Label(l, text="Width")
         la.grid(row=cur_row, column=0, sticky='WE')
@@ -172,14 +173,13 @@ class ShardGui():
         bt.grid(row=cur_row, column=0, columnspan=2,
                 sticky='WE', padx=5, pady=5)
 
-        self.impact_scales, _ = self.__scale_layout_group("Impact shape settings", self.aframe, 150, impact_sliders)
-        self.impact_prob_scales, _ = self.__scale_layout_group("Impact probability settings", self.aframe, 150, prob_sliders)
-        self.impact_tab_scales, tabgroup = self.__scale_layout_group("Tab settings", self.aframe, 150, tab_sliders, command=self.tab_preview)
+        self.impact_scales, _ = self.__scale_layout_group("Impact shape settings", self.aframe, 200, impact_sliders)
+        self.impact_prob_scales, _ = self.__scale_layout_group("Impact probability settings", self.aframe, 200, prob_sliders)
+        self.impact_tab_scales, tabgroup = self.__scale_layout_group("Tab settings", self.aframe, 200, tab_sliders, command=self.tab_preview)
 
         self.tabcanvas = tk.Canvas(tabgroup, bg="white", width=300, height=150)
         self.tabcanvas.grid(columnspan=2)
 
-        self.settingsbuttons = self.__button_layout_group("Settings load/save",self.aframe,150,settings_btns)
 
         # Right side area
 
@@ -217,12 +217,14 @@ class ShardGui():
 
     def openprojectile(self):
         projectileGUIWindow = tk.Toplevel(self.root)
-        projectileGUIWindow.iconbitmap(resource_path('assets/Shard.ico'))
+        if ( sys.platform.startswith('win')):
+            projectileGUIWindow.iconbitmap(resource_path('assets/Shard.ico'))
         ProjectileGUI(projectileGUIWindow)
 
     def opentabeditor(self):
         tabEditorWindow = tk.Toplevel(self.root)
-        tabEditorWindow.iconbitmap(resource_path('assets/Shard.ico'))
+        if ( sys.platform.startswith('win')):
+            tabEditorWindow.iconbitmap(resource_path('assets/Shard.ico'))
         TabEditor(tabEditorWindow)
 
     def loadtablibrary(self):
@@ -574,16 +576,17 @@ class ShardGui():
 
             self.root.filename = filedialog.asksaveasfilename(
                 title="Save SVG", filetypes=(("svg files", "*.svg"), ("all files", "*.*")))
-            if not self.root.filename.endswith(".svg"):
-                self.root.filename += ".svg"
+            if self.root.filename:
+                if not self.root.filename.endswith(".svg"):
+                    self.root.filename += ".svg"
 
-            dwg = svgwrite.Drawing(self.root.filename, size=(
-                str(width)+'mm', str(height)+'mm'), viewBox=('0 0 {} {}'.format(width, height)))
+                dwg = svgwrite.Drawing(self.root.filename, size=(
+                    str(width)+'mm', str(height)+'mm'), viewBox=('0 0 {} {}'.format(width, height)))
 
-            for polyline in self.impact.topolylines():
-                polyline.printtosvg(dwg, offset)
-            self.frame.printtosvg(dwg, offset)
-            dwg.save()
+                for polyline in self.impact.topolylines():
+                    polyline.printtosvg(dwg, offset)
+                self.frame.printtosvg(dwg, offset)
+                dwg.save()
     def savesettings(self):
         savevars =[ ("rads",self.rads),
                     ("radf",self.radf),
@@ -609,14 +612,14 @@ class ShardGui():
 
         self.root.filename = filedialog.asksaveasfilename(title="Save Settings", filetypes=(("Settings Files", "*.set"), ("all files", "*.*")))
         if(self.root.filename):
-                if not self.root.filename.endswith(".set"):
-                    self.root.filename += ".set"     
-                settings = Element('impactsettings', version='1.1')
-                for var in savevars:
-                    SubElement(settings, var[0],val=str(var[1].get()))
-                filecontent= ElementTree.tostring(settings)
-                with open(self.root.filename, 'wb') as settingsfile:
-                    settingsfile.write(filecontent)
+            if not self.root.filename.endswith(".set"):
+                self.root.filename += ".set"     
+            settings = Element('impactsettings', version='1.1')
+            for var in savevars:
+                SubElement(settings, var[0],val=str(var[1].get()))
+            filecontent= ElementTree.tostring(settings)
+            with open(self.root.filename, 'wb') as settingsfile:
+                settingsfile.write(filecontent)
 
 
     def loadsettings(self):
@@ -643,7 +646,6 @@ class ShardGui():
             ("drced",self.drced)]
         self.root.filename = filedialog.askopenfilename(title="Load Settings", filetypes=(("Settings Files", "*.set"), ("all files", "*.*")))
         if(self.root.filename):
-            print(self.root.filename)
             try:
                 xmldoc = ElementTree.parse(self.root.filename)
                 impactroot = xmldoc.getroot()
@@ -658,6 +660,7 @@ class ShardGui():
      
             except Exception as e:
                 print(e)
+            self.tab_preview(None)
 
 
     def saveimpact(self):
@@ -779,6 +782,16 @@ class ShardGui():
         if self.selectedtab:
             self.selectedtab.make_fracture(jitter_pc=self.trjs.get())
             self._post_tabmod([self.selectedtab])
+    
+    def regentabs(self):
+        for t in self.impact.tabmatrix.flatten():
+            if t:
+                if t.tabtype is TabType.FRACTURE:
+                    t.make_fracture(jitter_pc=self.trjs.get())
+                elif t.tabtype is TabType.JAGGED or t.tabtype is TabType.LINE:
+                    t.make_jagged(cl_frac=self.rtbs.get()/100, tl_frac=self.rtts.get()/100, tab_rel_depth=self.rtds.get()/100, segvar=self.trjs.get(), angvar=np.deg2rad(self.tajs.get()))
+        self.impact.clear_drc()
+        self._post_tabmod([])
 
     def fixissues(self):
         tabstodelete = set([])
@@ -910,7 +923,9 @@ class ShardGui():
 def main():
     root = tk.Tk()
     root.title("Impact Puzzle Generator")
-    root.iconbitmap(resource_path('assets/Shard.ico'))
+    root.minsize(1600,1000)
+    if ( sys.platform.startswith('win')):
+        root.iconbitmap(resource_path('assets/Shard.ico'))
     app = ShardGui(root)
     root.mainloop()
 
