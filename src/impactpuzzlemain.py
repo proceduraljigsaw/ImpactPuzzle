@@ -10,7 +10,9 @@ import math
 import tkinter as tk
 import svgwrite
 import itertools
+import ezdxf
 import numpy as np
+from ezdxf import units
 from numpy.random import uniform
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
@@ -60,13 +62,13 @@ def resource_path(relative_path):
 class ShardGui():
     def __init__(self, root):
         self.root = root
-        self.dframe = tk.Frame(self.root, width=1200, height=1000)
-        self.aframe = tk.Frame(self.root, height=1000)
+        self.dframe = tk.Frame(self.root, width=1200, height=900)
+        self.aframe = tk.Frame(self.root, height=900)
         self.aframe.pack(side="left")
-        self.sframe = tk.Frame(self.root, width=250, height=1000)
+        self.sframe = tk.Frame(self.root, width=250, height=900)
         self.sframe.pack(side="right")
         self.canvas = tk.Canvas(self.dframe, bg="white", width=1200,
-                                height=1000, cursor="tcross")
+                                height=900, cursor="tcross")
 
         self.rads = tk.IntVar(value=20)  # Impact Radius
         self.radf = tk.IntVar(value=500)  # Final Radius
@@ -142,7 +144,7 @@ class ShardGui():
         loadsave_btns = [ButtonDesc("Load projectile", self.loadprojectile, 0),
                          ButtonDesc("Load Impact", self.loadimpact, 1),
                          ButtonDesc("Save Impact", self.saveimpact, 0),
-                         ButtonDesc("Export SVG", self.exportsvg, 1),
+                         ButtonDesc("Export Vectors", self.exportvector, 1),
                          ButtonDesc("Projectile Editor", self.openprojectile, 0, colspan=2),
                          ButtonDesc("Tab Creator", self.opentabeditor, 0, colspan=2),
                          ButtonDesc("Load tab library", self.loadtablibrary, 0, colspan=2),
@@ -562,7 +564,7 @@ class ShardGui():
         self.selectedtab = None
         self.reprint_impact()
 
-    def exportsvg(self):
+    def exportvector(self):
         if self.impact:
             xs = [p.x for tab in self.impact.tabmatrix.flat if tab and not tab.gap for p in tab.points]
             ys = [p.y for tab in self.impact.tabmatrix.flat if tab and not tab.gap for p in tab.points]
@@ -575,18 +577,25 @@ class ShardGui():
             offset = Point(minx, miny)
 
             self.root.filename = filedialog.asksaveasfilename(
-                title="Save SVG", filetypes=(("svg files", "*.svg"), ("all files", "*.*")))
+                title="Save Vector File", defaultextension = "*.*",filetypes=(("SVG format", "*.svg"),("DXF (R2010) format", "*.dxf")))
             if self.root.filename:
-                if not self.root.filename.endswith(".svg"):
-                    self.root.filename += ".svg"
+                print(self.root.filename)
+                if self.root.filename.endswith(".svg"):
+                    dwg = svgwrite.Drawing(self.root.filename, size=(
+                        str(width)+'mm', str(height)+'mm'), viewBox=('0 0 {} {}'.format(width, height)))
 
-                dwg = svgwrite.Drawing(self.root.filename, size=(
-                    str(width)+'mm', str(height)+'mm'), viewBox=('0 0 {} {}'.format(width, height)))
+                    for polyline in self.impact.topolylines():
+                        polyline.printtosvg(dwg, offset)
+                    self.frame.printtosvg(dwg, offset)
+                    dwg.save()
+                elif self.root.filename.endswith(".dxf"):
+                    doc = ezdxf.new('R2010')
+                    doc.units = units.MM
+                    for polyline in self.impact.topolylines():
+                        polyline.printtodxf(doc.modelspace(), offset)
+                    self.frame.printtodxf(doc.modelspace(), offset)
+                    doc.saveas(self.root.filename)
 
-                for polyline in self.impact.topolylines():
-                    polyline.printtosvg(dwg, offset)
-                self.frame.printtosvg(dwg, offset)
-                dwg.save()
     def savesettings(self):
         savevars =[ ("rads",self.rads),
                     ("radf",self.radf),
@@ -923,7 +932,7 @@ class ShardGui():
 def main():
     root = tk.Tk()
     root.title("Impact Puzzle Generator")
-    root.minsize(1600,1000)
+    root.minsize(1600,900)
     if ( sys.platform.startswith('win')):
         root.iconbitmap(resource_path('assets/Shard.ico'))
     app = ShardGui(root)

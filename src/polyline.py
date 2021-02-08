@@ -90,3 +90,7 @@ class Polyline:
         polypoints = [((p-offset).x, (p-offset).y) for p in self.points]
         dwg.add(dwg.polyline(polypoints, stroke="red",
                              fill="none", stroke_width="0.1"))
+
+    def printtodxf(self,msp,offset = Point(0,0)):
+        polypoints = [((p-offset).x, (p-offset).y) for p in self.points]
+        msp.add_lwpolyline(polypoints)
