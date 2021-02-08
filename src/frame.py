@@ -61,8 +61,8 @@ class RectangularFrame:
         polypoints = [((p-offset).x, (p-offset).y) for p in points]
         dwg.add(dwg.polyline(polypoints, stroke="red", fill="none"))
 
-    def printtodxf(self, msp, offset=Point(0, 0)):
+    def printtodxf(self, msp,maxy, offset=Point(0, 0)):
         points = [self.ulc, Point(self.lrc.x, self.ulc.y), self.lrc, Point(
             self.ulc.x, self.lrc.y), self.ulc]
-        polypoints = [((p-offset).x, (p-offset).y) for p in points]
+        polypoints = [((p-offset).x, maxy-(p-offset).y) for p in points]
         msp.add_lwpolyline(polypoints)

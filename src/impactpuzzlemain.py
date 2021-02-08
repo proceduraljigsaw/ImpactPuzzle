@@ -575,7 +575,7 @@ class ShardGui():
             width = maxx-minx
             height = maxy-miny
             offset = Point(minx, miny)
-
+            maxy_off = maxy - offset.y
             self.root.filename = filedialog.asksaveasfilename(
                 title="Save Vector File", defaultextension = "*.*",filetypes=(("SVG format", "*.svg"),("DXF (R2010) format", "*.dxf")))
             if self.root.filename:
@@ -592,8 +592,8 @@ class ShardGui():
                     doc = ezdxf.new('R2010')
                     doc.units = units.MM
                     for polyline in self.impact.topolylines():
-                        polyline.printtodxf(doc.modelspace(), offset)
-                    self.frame.printtodxf(doc.modelspace(), offset)
+                        polyline.printtodxf(doc.modelspace(), maxy_off, offset)
+                    self.frame.printtodxf(doc.modelspace(),maxy_off, offset)
                     doc.saveas(self.root.filename)
 
     def savesettings(self):
